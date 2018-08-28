@@ -15,10 +15,20 @@ class Base(db.Model):
 # Model for poll topics
 class Topics(Base):
     title = db.Column(db.String(500))
+    status = db.Column(db.Boolean, default=1)
 
     # User friendly way to display the object
     def __repr__(self):
         return self.title 
+
+    def to_json(self):
+        return {
+            'title': self.title,
+            'options':
+                [{'name': option.option.name, 'vote_count': option.vote_count}
+                    for option in self.options.all()],
+            'status': self.status
+        }
 
 # Model for pool options
 class Options(Base):

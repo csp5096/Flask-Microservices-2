@@ -1,8 +1,9 @@
 from flask import (
-  Flask, render_template, request, flash, redirect, url_for, session
+  Flask, render_template, request, flash, redirect, url_for, session, jsonify
 )
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import db, Users
+from flask_migrate import Migrate
+from models import db, Users, Polls, Topics, Options
 
 app = Flask(__name__)
 
@@ -12,6 +13,8 @@ app.config.from_object('config')
 # Initialize and create the database
 db.init_app(app)
 db.create_all(app=app)
+
+migrate = Migrate(app, db, render_as_batch=True)
 
 @app.route('/')
 def home():
@@ -70,5 +73,23 @@ def logout():
 
     return redirect(url_for('home'))
 
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+@app.route('/api/polls', methods=['GET', 'POST'])
+# retrieves/adds polls from/to the database
+def api_polls():
+    if request.method == 'POST':
+        # get the poll and save it in the database
+        poll = request.get_json()
+
+        return "The title of the poll is {} and the options are {} and {}".format(poll['title'], *poll['options'])
+
+    else:
+        # query the db and return all the polls as json
+        all_polls = {}
+
+        # get all the topics in the database
+        topics = Topics.query.all()
+        for topic in topics:
+            # for each topic get the all options that are associated with it
+            all_polls[topic.title] = {'options': [poll.option.name for poll in Polls.query.filter_by(topic=topic)]}
+
+        return jsonify(all_polls)
