@@ -1,4 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
+import uuid
 
 # Create a new SQLAlchemy object
 db = SQLAlchemy()
@@ -32,7 +33,16 @@ class Topics(Base):
 
 # Model for pool options
 class Options(Base):
-    name = db.Column(db.String(200))
+    name = db.Column(db.String(200), unique=True)
+
+    def __repr__(self):
+        return self.name
+
+    def to_json(self):
+        return {
+            'id': uuid.uuid4(), # Generates a random number
+            'name': self.name
+        }
 
 
 # Polls model to connect tops and options together
