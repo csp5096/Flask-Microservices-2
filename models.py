@@ -1,4 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
+import uuid
 
 # Create a new SQLAlchemy object
 db = SQLAlchemy()
@@ -15,14 +16,33 @@ class Base(db.Model):
 # Model for poll topics
 class Topics(Base):
     title = db.Column(db.String(500))
+    status = db.Column(db.Boolean, default=1)
 
     # User friendly way to display the object
     def __repr__(self):
         return self.title 
 
+    def to_json(self):
+        return {
+            'title': self.title,
+            'options':
+                [{'name': option.option.name, 'vote_count': option.vote_count}
+                    for option in self.options.all()],
+            'status': self.status
+        }
+
 # Model for pool options
 class Options(Base):
-    name = db.Column(db.String(200))
+    name = db.Column(db.String(200), unique=True)
+
+    def __repr__(self):
+        return self.name
+
+    def to_json(self):
+        return {
+            'id': uuid.uuid4(), # Generates a random number
+            'name': self.name
+        }
 
 
 # Polls model to connect tops and options together
@@ -43,3 +63,9 @@ class Polls(Base):
     def __repr(self):
         # A user friendly way to view our objects in the terminal
         return self.option.name
+
+# Model to store user details
+class Users(Base):
+    email = db.Column(db.String(100), unique=True) 
+    username = db.Column(db.String(50), unique=True)
+    password = db.Column(db.String(200))
