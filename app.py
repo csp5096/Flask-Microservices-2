@@ -72,6 +72,19 @@ def logout():
 
     return redirect(url_for('home'))
 
+@app.route('/polls', methods=['GET'])
+def polls():
+    return render_template('polls.html')
+
+@app.route('/polls/<poll_name>')
+def poll(poll_name):
+    return render_template('index.html')
+
+@app.route('/api/poll/<poll_name>')
+def api_poll(poll_name):
+    poll = Topics.query.filter(Topics.title.like(poll_name)).first()   
+    return jsonify({'Polls': [poll.to_json()]}) if poll else jsonify({'Message': 'Poll not found'})
+
 @app.route('/api/polls', methods=['GET', 'POST'])
 # retrieves/adds polls from/to the database
 def api_polls():
@@ -97,7 +110,7 @@ def api_polls():
         return jsonify({'message': 'Poll was created succesfully'})
     else:
         # it's a GET request, return dict representations of the API
-        polls = Topics.query.join(Polls).all()
+        polls = Topics.query.filter_by(status=1).join(Polls).order_by(Topics.id.desc()).all()
         all_polls = {'Polls':  [poll.to_json() for poll in polls]}
         return jsonify(all_polls)
 
