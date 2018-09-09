@@ -4,7 +4,7 @@ from flask import (
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_migrate import Migrate
 from flask_admin import Admin
-from admin import AdminView
+from admin import AdminView, TopicView
 from flask_admin.contrib.sqla import ModelView
 from models import db, Users, Polls, Topics, Options
 
@@ -21,7 +21,7 @@ migrate = Migrate(app, db, render_as_batch=True)
 # Create the app admin 
 admin = Admin(app, 
               name="Dashboard", 
-             index_view=AdminView(Topics, 
+              index_view=TopicView(Topics, 
                                   db.session, 
                                   url='/admin', 
                                   endpoint='admin'
@@ -139,11 +139,28 @@ def api_poll_vote():
     poll = request.get_json()  
     poll_title, option = (poll['poll_title'], poll['option'])
     join_tables = Polls.query.join(Topics).join(Options)
+
+    # Get topic and username from database
+    topic = Topics.query.filter_by(title=poll_title).first()
+    user = Users.query.filter_by(username=session['user']).first()
+
     # filter options
-    option = join_tables.filter(Topics.title.like(poll_title)).filter(Options.name.like(option)).first()  
+    option = join_tables.filter(Topics.title.like(poll_title)).filter(Options.name.like(option)).first()
+
+    # Check if the user has voted on this poll
+    poll_count = UserPolls.query.filter_by(topic_id=topic.id).filter_by(user_id=user.id).count()  
+    if poll_count > 0:
+        return jsonify({'message': 'Sorry: multiple voters are not allowed'})  
+    
     # increment vote_cout by 1 if the option was found 
     if option:
+        # Record the user and poll
+        user_oll = UserPolls(topic_di=topic.id, user_id=user.id)
+        db.session.add(user_poll)
+
+        # Increment vote_count by 1 if the option was found
         option.vote_count += 1  
         db.session.commit() 
         return jsonify({'message': 'Thank you for voting!'})
+
     return jsonify({'message': 'Option or Poll was not found please try again!'})
