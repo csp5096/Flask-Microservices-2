@@ -3,6 +3,9 @@ from flask import (
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_migrate import Migrate
+from flask_admin import Admin
+from admin import AdminView
+from flask_admin.contrib.sqla import ModelView
 from models import db, Users, Polls, Topics, Options
 
 app = Flask(__name__)
@@ -12,9 +15,21 @@ app.config.from_object('config')
 
 # Initialize and create the database
 db.init_app(app)
-db.create_all(app=app)
-
+#db.create_all(app=app)
 migrate = Migrate(app, db, render_as_batch=True)
+
+# Create the app admin 
+admin = Admin(app, 
+              name="Dashboard", 
+             index_view=AdminView(Topics, 
+                                  db.session, 
+                                  url='/admin', 
+                                  endpoint='admin'
+                                )
+            )
+admin.add_view(ModelView(Users, db.session))
+admin.add_view(ModelView(Polls, db.session))
+admin.add_view(ModelView(Options, db.session))
 
 @app.route('/')
 def home():
@@ -72,6 +87,19 @@ def logout():
 
     return redirect(url_for('home'))
 
+@app.route('/polls', methods=['GET'])
+def polls():
+    return render_template('polls.html')
+
+@app.route('/polls/<poll_name>')
+def poll(poll_name):
+    return render_template('index.html')
+
+@app.route('/api/poll/<poll_name>')
+def api_poll(poll_name):
+    poll = Topics.query.filter(Topics.title.like(poll_name)).first()   
+    return jsonify({'Polls': [poll.to_json()]}) if poll else jsonify({'Message': 'Poll not found'})
+
 @app.route('/api/polls', methods=['GET', 'POST'])
 # retrieves/adds polls from/to the database
 def api_polls():
@@ -97,7 +125,7 @@ def api_polls():
         return jsonify({'message': 'Poll was created succesfully'})
     else:
         # it's a GET request, return dict representations of the API
-        polls = Topics.query.join(Polls).all()
+        polls = Topics.query.filter_by(status=1).join(Polls).order_by(Topics.id.desc()).all()
         all_polls = {'Polls':  [poll.to_json() for poll in polls]}
         return jsonify(all_polls)
 
