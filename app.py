@@ -3,6 +3,9 @@ from flask import (
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_migrate import Migrate
+from flask_admin import Admin
+from admin import AdminView
+from flask_admin.contrib.sqla import ModelView
 from models import db, Users, Polls, Topics, Options
 
 app = Flask(__name__)
@@ -12,9 +15,21 @@ app.config.from_object('config')
 
 # Initialize and create the database
 db.init_app(app)
-db.create_all(app=app)
-
+#db.create_all(app=app)
 migrate = Migrate(app, db, render_as_batch=True)
+
+# Create the app admin 
+admin = Admin(app, 
+              name="Dashboard", 
+             index_view=AdminView(Topics, 
+                                  db.session, 
+                                  url='/admin', 
+                                  endpoint='admin'
+                                )
+            )
+admin.add_view(ModelView(Users, db.session))
+admin.add_view(ModelView(Polls, db.session))
+admin.add_view(ModelView(Options, db.session))
 
 @app.route('/')
 def home():
