@@ -1,12 +1,12 @@
 from models import db, Users, Polls, Topics, Options, UserPolls   
 from flask import Blueprint, request, jsonify, session  
+from datetime import datetime
 
 api = Blueprint('api', 'api', url_prefix='/api')
 
 @api.route('/polls', methods=['GET', 'POST'])
 def api_polls():
     if request.method == 'POST':
-        
         # get the poll and save it in the database
         poll = request.get_json()
 
@@ -21,9 +21,16 @@ def api_polls():
                     if options_query(option).count() == 0
                     else Polls(option=options_query(option).first()) for option in poll['options']
                 ]
-        new_topic = Topics(title=title, options=options)
+        eta = datetime.utcfromtimestamp(poll['close_date'])
+        new_topic = Topics(title=title, options=options, close_date=eta)
         db.session.add(new_topic)
         db.session.commit()
+
+        # Run the task
+        from task import close_poll 
+
+        eta = datetime.utcfromtimestamp(poll['close_date'])
+        close_poll.appy_async((new_topic.id), eta=eta)
         return jsonify({'message': 'Poll was created succesfully'})
     else:
         # It's a GET request, return dict representations of the API

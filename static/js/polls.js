@@ -2,6 +2,7 @@ var Router = ReactRouter.Router;
 var Route = ReactRouter.Route;
 var browserHistory = ReactRouter.browserHistory
 
+// top level import
 try {
   var SimpleTimePicker = ReactSimpleTimePicker.SimpleTimePicker;
 }catch(err){
@@ -108,36 +109,36 @@ var PollForm = React.createClass({
     var classContext = "col-sm-6 col-sm-offset-3"
     var all_options = this.state.all_options.map(function(option){
                         return(<option key={option.id} value={option.name} />)
-                      });
+    });
     return (
-    <div>
-      <form id="poll_form" className="form-signin" onSubmit={this.handleSubmit}>
-        <h2 className="form-signin-heading" style={Align}>Create a poll</h2>
-        <div className="form-group has-success">
-          <label htmlFor="title" className="sr-only">Title</label>
-          <input type="text" id="title" name="title" className="form-control" placeholder="Title" onChange={this.handleTitleChange} required autoFocus />
+      <div>
+        <form id="poll_form" className="form-signin" onSubmit={this.handleSubmit}>
+          <h2 className="form-signin-heading" style={Align}>Create a poll</h2>
+          <div className="form-group has-success">
+            <label htmlFor="title" className="sr-only">Title</label>
+            <input type="text" id="title" name="title" className="form-control" placeholder="Title" onChange={this.handleTitleChange} required autoFocus />
+          </div>
+          <div className="form-group has-success">
+            <label htmlFor="option" className="sr-only">Option</label>
+            <input list="option" className="form-control" placeholder="Option" onChange={this.handleOptionChange}
+            value={this.state.option ? this.state.option: ''} autoFocus />
+          </div>
+          <datalist id="option">
+            {all_options}
+          </datalist>
+          <SimpleTimePicker days="7" onChange={this.onDateChange} />
+          <br />
+          <div className="row form-group">
+            <button className="btn btn-lg btn-success btn-block" type="button" onClick={this.handleOptionAdd}>Add option</button>
+            <button className="btn btn-lg btn-success btn-block" type="submit">Save poll</button>
+          </div>
+          <br />
+        </form>
+        <div className="row">
+        <h3 style={Align}>Live Preview</h3>
+          <LivePreview title={this.state.title} options={this.state.options} classContext={classContext} />
         </div>
-        <div className="form-group has-success">
-          <label htmlFor="option" className="sr-only">Option</label>
-          <input list="option" className="form-control" placeholder="Option" onChange={this.handleOptionChange}
-          value={this.state.option ? this.state.option: ''} autoFocus />
-        </div>
-        <datalist id="option">
-          {all_options}
-        </datalist>
-        <SimpleTimePicker days="7" onChange={this.onDateChange} />
-        <br />
-        <div className="row form-group">
-          <button className="btn btn-lg btn-success btn-block" type="button" onClick={this.handleOptionAdd}>Add option</button>
-          <button className="btn btn-lg btn-success btn-block" type="submit">Save poll</button>
-        </div>
-        <br />
-      </form>
-      <div className="row">
-      <h3 style={Align}>Live Preview</h3>
-        <LivePreview title={this.state.title} options={this.state.options} classContext={classContext} />
       </div>
-    </div>
     );
   }
 });
@@ -196,8 +197,8 @@ var LivePreview = React.createClass({
               {options}
               <br />
               <button type="submit" disabled={this.state.disabled}
-              className="btn btn-success btn-outline hvr-grow">Vote!</button>
-              <small> {this.props.total_vote_count} votes so far</small>
+              className="btn btn-success btn-outline hvr-grow">Poll It!</button>
+              <small> {this.props.total_vote_count} Polls so far</small>
               <small style={TimeLeft}> | {this.props.close_date}</small>
             </form>
           </div>

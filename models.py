@@ -20,7 +20,7 @@ class Topics(Base):
     title = db.Column(db.String(500))
     status = db.Column(db.Boolean, default=1) # to mark the poll as open or closed
     create_uid = db.Column(db.ForeignKey('users.id'))
-
+    close_date = db.Column(db.DateTime)
     created_by = db.relationship('Users', 
                                  foreign_keys=[create_uid],
                                  backref=db.backref('user_polls',
@@ -38,6 +38,7 @@ class Topics(Base):
             'options':
                 [{'name': option.option.name, 'vote_count': option.vote_count}
                     for option in self.options.all()],
+            'close_date': self.close_date,
             'status': self.status,
             'total_vote_count': self.total_vote_count
         }

@@ -13,11 +13,27 @@ from flask_migrate import Migrate
 from flask_admin import Admin
 from admin import AdminView, TopicView
 from flask_admin.contrib.sqla import ModelView
+from celery import Celery
 from models import db, Users, Polls, Topics, Options, UserPolls
+import config
+from api.api import api # Blueprints
 
-# Blueprints 
-from api.api import api
+def make_celery(app):
+    celery = Celery(app.import_name, broker=config.CELERY_BROKER)
+    celery.conf.update(app.config)
+    TaskBase = celery.Task  
 
+    class ContextTask(TaskBase):
+        abtract = True 
+
+        def __call__(self, *args, **kwargs):
+            with app.app.context():
+                return TaskBase.__call_(self, *args, **kwargs)
+
+    celery.Task = ContextTask
+    return celery 
+
+# Create the flask app with blueprints
 app = Flask(__name__)
 
 app.register_blueprint(api)
@@ -27,8 +43,11 @@ app.config.from_object('config')
 
 # Initialize and create the database
 db.init_app(app)
-#db.create_all(app=app)
+db.create_all(app=app)
 migrate = Migrate(app, db, render_as_batch=True)
+
+# create the celery object 
+celery = make_celery(app)
 
 # Create the app admin 
 admin = Admin(app, 
